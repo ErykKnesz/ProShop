@@ -1,22 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams} from 'react-router-dom';
+import { Link, useParams, useNavigate, createSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Row, Col, Image, ListGroup, Button, Card } from 'react-bootstrap';
+import { Row, Col, Image, ListGroup, Button, Card, Form } from 'react-bootstrap';
 import Rating from '../components/Rating';
 import Loader from "../components/Loader";
 import Message from "../components/Message";
-import axios from 'axios';
 import { listProductDetails } from '../actions/productActions';
 
-function ProductScreen() {
+function ProductScreen({history}) {
+  const [qty, setQty] = useState(1)
   const { id } = useParams();
+  const navigate = useNavigate()
   const dispatch = useDispatch()
   const productDetails = useSelector(state => state.productDetails)
+
   const { loading, error, product } = productDetails
+  const params = {qty:qty}
 
   useEffect(() => {
     dispatch(listProductDetails(id))
 }, [id, dispatch])
+
+  const addToCartHandler = () => {
+    navigate({            
+      pathname: `/cart/${id}`,            
+      search: `?${createSearchParams(params)}`,          
+  });
+  }
 
   return (
     <div>
@@ -69,10 +79,33 @@ function ProductScreen() {
                   </Col>
                 </Row>
             </ListGroup.Item>
+
+            {product.count_in_stock > 0 && (
+              <ListGroup.Item>
+                <Row>
+                  <Col>Qty</Col>
+                  <Col xs='auto' className='my-1'> 
+                    <Form.Control as="select" value={qty} onChange={e => setQty(e.target.value)}>
+                      {
+                        [...Array(product.count_in_stock).keys()].map((x) => (
+                          <option key={x + 1} value={x + 1}>
+                            {x + 1}
+                          </option>
+                        ))
+                      }
+                    </Form.Control>
+                  </Col>
+                </Row>
+              </ListGroup.Item>
+            )}
             <ListGroup.Item>
-              <div class="d-grid gap-2 col-12 mx-auto">
-                <Button type='button' disabled={product.count_in_stock === 0}>Add to Cart</Button>
-              </div>
+              <Button
+                onClick={addToCartHandler}
+                className='btn-block'
+                disabled={product.count_in_stock == 0}
+                type='button'>
+                  Add to Cart
+                </Button>
             </ListGroup.Item>
           </ListGroup>
         </Card>
